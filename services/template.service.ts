@@ -1,3 +1,7 @@
+// Template Service
+// Business logic for template management including CRUD, search, filtering, and bulk operations
+// Acts as intermediary between API routes and template repository
+
 import { ZodError } from "zod";
 import { isValidObjectId } from "mongoose";
 import {

@@ -1,3 +1,6 @@
+// Command Palette Component
+// Keyboard-driven command interface for quick actions
+// Allows users to quickly perform operations with keyboard shortcuts
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";

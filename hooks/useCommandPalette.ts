@@ -1,3 +1,6 @@
+// useCommandPalette Hook
+// Manages command palette visibility state and keyboard shortcuts
+// Handles opening/closing the command palette UI
 "use client";
 
 import { useCallback, useState } from "react";

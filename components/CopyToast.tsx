@@ -1,3 +1,6 @@
+// Copy Toast Notification Component
+// Displays success notification when content is copied to clipboard
+// Auto-dismisses after a few seconds
 "use client";
 
 import { classNames } from "@/utils/helpers";

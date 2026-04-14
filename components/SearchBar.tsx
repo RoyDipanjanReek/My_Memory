@@ -1,3 +1,6 @@
+// Search Bar Component
+// Provides main search input for filtering and finding templates
+// Handles real-time search query updates and submission
 "use client";
 
 import type { KeyboardEvent, RefObject } from "react";

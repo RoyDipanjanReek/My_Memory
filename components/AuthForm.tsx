@@ -1,3 +1,7 @@
+// Authentication Form Component
+// Reusable form for both login and signup
+// Handles form validation, submission, and user feedback
+// Works in both modes: login and signup
 "use client";
 
 import Link from "next/link";

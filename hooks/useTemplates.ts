@@ -1,3 +1,6 @@
+// useTemplates Hook
+// Custom React hook for managing template state and API interactions
+// Handles fetching, caching, filtering, and CRUD operations on templates
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

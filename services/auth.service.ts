@@ -1,3 +1,7 @@
+// Authentication Service
+// Handles user login, registration, session management, and password hashing
+// Core business logic for authentication operations
+
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { ZodError, z } from "zod";
 import {

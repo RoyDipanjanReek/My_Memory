@@ -1,3 +1,6 @@
+// Card Component
+// Reusable card container for displaying content
+// Provides consistent styling and layout for template/memory items
 "use client";
 
 import HighlightedText from "@/components/HighlightedText";

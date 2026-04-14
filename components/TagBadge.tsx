@@ -1,3 +1,6 @@
+// Tag Badge Component
+// Displays individual tags attached to templates
+// Allows users to filter templates by clicking on tags
 "use client";
 
 import { classNames } from "@/utils/helpers";

@@ -1,3 +1,6 @@
+// useTheme Hook
+// Manages application theme (dark/light) and accent color preferences
+// Persists user preferences to localStorage for persistence across sessions
 "use client";
 
 import { useEffect, useState } from "react";

@@ -1,4 +1,10 @@
+// Template type definitions
+// Defines all interfaces and types for templates and related API responses
+
+// Available template categories
 export const TEMPLATE_CATEGORIES = ["email", "code", "note"] as const;
+
+// Available views/filters for template lists
 export const TEMPLATE_VIEWS = [
   "all",
   "favorites",

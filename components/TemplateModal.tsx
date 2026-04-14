@@ -1,3 +1,6 @@
+// Template Modal Component
+// Modal dialog for viewing/editing template details
+// Provides full template editing interface with version history
 "use client";
 
 import type { FormEvent } from "react";

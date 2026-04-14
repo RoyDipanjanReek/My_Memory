@@ -1,3 +1,6 @@
+// Utility helper functions for template/memory operations
+// Includes text processing, clipboard operations, search ranking, and data formatting
+
 import type {
   ApiErrorResponse,
   TemplateCategory,
@@ -10,6 +13,7 @@ import type {
   TemplateView
 } from "@/types/template.types";
 
+// Words to filter out from text processing (common words with low information value)
 const STOP_WORDS = new Set([
   "a",
   "an",

@@ -1,3 +1,6 @@
+// Empty State Component
+// Displays helpful message when no templates are found
+// Guides users on next steps (create template, adjust filters, etc.)
 "use client";
 
 type EmptyStateProps = {

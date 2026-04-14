@@ -1,3 +1,6 @@
+// Sidebar Component
+// Displays navigation, filters, and collections for template management
+// Provides quick access to template views and filtering options
 "use client";
 
 import { useMemo, useState } from "react";

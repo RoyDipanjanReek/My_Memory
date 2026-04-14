@@ -1,3 +1,7 @@
+// Template Repository - Data access layer for template operations
+// Handles all database queries for storing, retrieving, and manipulating templates
+// Includes search, filtering, pagination, and bulk operations
+
 import { connectToDatabase } from "@/lib/mongodb";
 import TemplateModel from "@/models/Template";
 import type { TemplateFilters, TemplateInput, TemplateRecord } from "@/types/template.types";

@@ -1,3 +1,6 @@
+// Template Manager Component
+// Main client component managing the entire template management interface
+// Handles template display, filtering, search, and bulk actions
 "use client";
 
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";

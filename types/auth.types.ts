@@ -1,3 +1,7 @@
+// Authentication type definitions
+// Defines interfaces and types for users, sessions, and auth-related data
+
+// Available user roles for authorization
 export const USER_ROLES = ["admin", "member"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];

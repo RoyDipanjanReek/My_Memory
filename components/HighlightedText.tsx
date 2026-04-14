@@ -1,3 +1,6 @@
+// Highlighted Text Component
+// Displays text with search query terms highlighted
+// Used in search results to show matching terms
 "use client";
 
 import { highlightMatch } from "@/utils/helpers";

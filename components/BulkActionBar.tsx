@@ -1,3 +1,6 @@
+// Bulk Action Bar Component
+// Provides toolbar for performing operations on multiple selected templates
+// Shows options like delete, favorite, archive when templates are selected
 "use client";
 
 type BulkActionBarProps = {

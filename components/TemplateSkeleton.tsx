@@ -1,3 +1,6 @@
+// Template Skeleton Component
+// Loading placeholder skeleton for template cards
+// Provides visual feedback while templates are loading
 "use client";
 
 import { classNames } from "@/utils/helpers";

@@ -1,5 +1,10 @@
+// Sample Templates/Memories Data
+// Contains example templates used for demonstration and seeding databases
+// Helps new users understand template structure and use cases
+
 import type { TemplateCreateInput } from "@/types/template.types";
 
+// Array of sample templates across different categories
 export const SAMPLE_MEMORIES: TemplateCreateInput[] = [
   {
     content: `Subject: Design system handoff\n\nHi team,\n\nI wrapped the button and form primitives into a single package so new flows can share spacing, states, and accessibility patterns. The next step is wiring the tokens into marketing pages.\n\nBest,\nAri`,
