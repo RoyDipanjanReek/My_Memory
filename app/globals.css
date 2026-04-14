@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent-rgb: 223 139 61;
+  --accent-soft: rgba(223, 139, 61, 0.12);
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+html[data-accent="emerald"] {
+  --accent-rgb: 52 168 111;
+  --accent-soft: rgba(52, 168, 111, 0.12);
+}
+
+html[data-accent="rose"] {
+  --accent-rgb: 224 111 138;
+  --accent-soft: rgba(224, 111, 138, 0.14);
+}
+
+html {
+  min-height: 100%;
+  background: #f5efe6;
+}
+
+html.dark {
+  color-scheme: dark;
+  background: #020817;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.06), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.9)),
+    #f5efe6;
+  color: #0f172a;
+}
+
+html.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(2, 8, 23, 0.9), rgba(2, 8, 23, 0.96)),
+    #020817;
+  color: #e2e8f0;
+}
+
+* {
+  border-color: #e5e7eb;
+}
+
+html.dark * {
+  border-color: #1e293b;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.18);
+}
+
+html.dark ::selection {
+  background: rgba(var(--accent-rgb), 0.24);
+}
+
+.focus-ring {
+  @apply outline-none;
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-rgb), 0.36),
+    0 0 0 4px rgba(var(--accent-rgb), 0.12);
+}
+
+.surface-hover {
+  @apply transition-all duration-200 ease-out;
+}
+
+.surface-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.24);
+}
+
+.pressable {
+  @apply transition-all duration-200 ease-out active:scale-[0.985];
+}
+
+@keyframes toast-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+
+  12%,
+  82% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+.animate-toast-pop {
+  animation: toast-pop 1.6s ease-out both;
+}
