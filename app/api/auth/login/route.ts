@@ -1,3 +1,7 @@
+// Login API Route
+// Handles user authentication and session creation
+// POST: Authenticate user with email/password, return session token
+
 import { NextResponse } from "next/server";
 import { clearSessionCookie, setSessionCookie } from "@/lib/auth";
 import { logEvent } from "@/lib/logger";

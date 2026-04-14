@@ -1,3 +1,8 @@
+// Individual Template API Route
+// GET /api/templates/[id] - Retrieve specific template
+// PATCH /api/templates/[id] - Update specific template
+// DELETE /api/templates/[id] - Delete specific template
+
 import { NextResponse } from "next/server";
 import { requireUserFromRequest } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/mongodb";

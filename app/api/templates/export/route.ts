@@ -1,3 +1,7 @@
+// Template Export API Route
+// GET /api/templates/export - Exports templates to JSON format
+// Allows users to backup their templates
+
 import { NextResponse } from "next/server";
 import { requireUserFromRequest } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/mongodb";

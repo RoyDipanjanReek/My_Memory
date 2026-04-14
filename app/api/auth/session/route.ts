@@ -1,3 +1,7 @@
+// Session/Current User API Route
+// GET /api/auth/session - Returns current authenticated user information
+// Used by client to check authentication status
+
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/auth";
 import { getAuthenticatedUser } from "@/services/auth.service";

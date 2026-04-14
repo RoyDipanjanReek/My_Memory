@@ -1,3 +1,7 @@
+// User Logout API Route
+// POST /api/auth/logout - Invalidates user session and clears cookie
+// Removes session token from database
+
 import { NextResponse } from "next/server";
 import { clearSessionCookie, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { logoutUser } from "@/services/auth.service";

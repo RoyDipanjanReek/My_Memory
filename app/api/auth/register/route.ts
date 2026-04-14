@@ -1,3 +1,7 @@
+// User Registration API Route
+// POST /api/auth/register - Creates new user account and returns session token
+// Validates input, creates user, generates session
+
 import { NextResponse } from "next/server";
 import { clearSessionCookie, setSessionCookie } from "@/lib/auth";
 import { logEvent } from "@/lib/logger";

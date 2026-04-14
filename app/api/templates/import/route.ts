@@ -1,3 +1,7 @@
+// Template Import API Route
+// POST /api/templates/import - Imports templates from JSON
+// Allows users to restore templates or bulk import
+
 import { NextResponse } from "next/server";
 import { requireUserFromRequest } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/mongodb";
