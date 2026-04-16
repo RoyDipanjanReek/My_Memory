@@ -2,9 +2,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
-
-// Cookie name used to store session tokens
-export const SESSION_COOKIE_NAME = "developer_memory_session";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 /**
  * Sets a secure session cookie on the response

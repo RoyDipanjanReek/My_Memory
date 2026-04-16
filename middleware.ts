@@ -1,7 +1,7 @@
 // Next.js middleware for request-level authentication and routing logic
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE_NAME } from "@/lib/auth";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 // Routes that require authentication
 const PROTECTED_PATHS = ["/workspace", "/api/templates", "/api/search"];

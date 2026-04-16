@@ -3,7 +3,7 @@
 // Used by client to check authentication status
 
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME } from "@/lib/auth";
+import { SESSION_COOKIE_NAME } from "@/lib/constants";
 import { getAuthenticatedUser } from "@/services/auth.service";
 
 export const runtime = "nodejs";

@@ -1,43 +1,11 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { LandingHeader } from "@/components/LandingHeader";
 
-export default async function LandingPage() {
-  const user = await getCurrentUser();
-
+export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[#120f0a] text-[#f5e8d5]">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-6 py-8 lg:px-10">
-        <header className="flex items-center justify-between">
-          <Link className="text-lg font-semibold tracking-tight" href="/">
-            MyMemory
-          </Link>
-
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link
-                className="rounded-full border border-[#4f3f28] bg-[#21180f] px-4 py-2 text-sm font-medium text-[#f5e8d5] transition hover:bg-[#2b2013]"
-                href="/workspace"
-              >
-                Open workspace
-              </Link>
-            ) : (
-              <>
-                <Link
-                  className="rounded-full px-4 py-2 text-sm text-[#d7c3a4] transition hover:text-[#f5e8d5]"
-                  href="/login"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  className="rounded-full bg-[#df8b3d] px-4 py-2 text-sm font-semibold text-[#120f0a] transition hover:bg-[#e79a56]"
-                  href="/signup"
-                >
-                  Start free
-                </Link>
-              </>
-            )}
-          </div>
-        </header>
+        <LandingHeader />
 
         <section className="grid flex-1 gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
@@ -56,9 +24,9 @@ export default async function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 className="rounded-full bg-[#df8b3d] px-6 py-3 text-sm font-semibold text-[#120f0a] transition hover:bg-[#e79a56]"
-                href={user ? "/workspace" : "/signup"}
+                href="/signup"
               >
-                {user ? "Go to workspace" : "Create your workspace"}
+                Create your workspace
               </Link>
               <Link
                 className="rounded-full border border-[#4f3f28] bg-[#20170f] px-6 py-3 text-sm font-medium text-[#f5e8d5] transition hover:bg-[#2a2014]"

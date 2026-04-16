@@ -95,7 +95,9 @@ export async function connectToDatabase() {
       .connect(mongoUri, {
         bufferCommands: false, // Don't queue commands while connecting
         maxPoolSize: 10, // Maximum number of connections in the pool
-        serverSelectionTimeoutMS: 5000 // Timeout for finding a server
+        serverSelectionTimeoutMS: 2000, // Fail fast - reduced from 5000ms
+        socketTimeoutMS: 10000, // Individual socket timeout
+        connectTimeoutMS: 2000 // Initial connection timeout
       })
       .then((connection) => connection)
       .catch((error) => {
