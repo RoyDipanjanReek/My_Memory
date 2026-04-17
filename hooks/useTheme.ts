@@ -13,7 +13,7 @@ const ACCENT_STORAGE_KEY = "template-manager-accent";
 
 export function useTheme() {
   const [theme, setTheme] = useState<ThemeMode>("light");
-  const [accent, setAccent] = useState<ThemeAccent>("amber");
+  const [accent, setAccent] = useState<ThemeAccent>("rose");
 
   useEffect(() => {
     if (typeof window === "undefined") {
