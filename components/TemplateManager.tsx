@@ -4,6 +4,7 @@
 "use client";
 
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BulkActionBar from "@/components/BulkActionBar";
 import Card from "@/components/Card";
@@ -52,6 +53,7 @@ export default function TemplateManager({
   initialMeta,
   dbUnavailable
 }: TemplateManagerProps) {
+  const router = useRouter();
   const { theme, accent, toggleTheme, setAccent } = useTheme();
   const { isOpen: isPaletteOpen, openPalette, closePalette } = useCommandPalette();
   const {
@@ -108,6 +110,7 @@ export default function TemplateManager({
     mode: "view"
   });
   const [selectedSearchIndex, setSelectedSearchIndex] = useState(0);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const selectedTemplate = useMemo(
@@ -255,6 +258,19 @@ export default function TemplateManager({
 
   const showLoadMore = Boolean(nextCursor);
 
+  const handleLogout = useCallback(async () => {
+    setIsLoggingOut(true);
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST"
+      });
+    } finally {
+      router.replace("/");
+      router.refresh();
+    }
+  }, [router]);
+
   return (
     <div className="min-h-[calc(100vh-2rem)] lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
       <div className="hidden lg:block">
@@ -308,6 +324,7 @@ export default function TemplateManager({
           activeView={activeView}
           collectionFilter={collectionFilter}
           collections={collectionSummaries}
+          isLoggingOut={isLoggingOut}
           isLoading={isFetching || isSubmitting}
           onAccentChange={setAccent}
           onActiveViewChange={setActiveView}
@@ -315,6 +332,7 @@ export default function TemplateManager({
           onCreateTemplate={openCreateModal}
           onExport={() => void exportTemplates(selectedIds.length > 0 ? selectedIds : undefined)}
           onImport={(file) => void importTemplates(file)}
+          onLogout={() => void handleLogout()}
           onOpenPalette={openPalette}
           onQueryChange={setQuery}
           onSearchKeyDown={handleSearchKeyDown}

@@ -37,26 +37,34 @@ function attachConnectionListeners() {
     return;
   }
 
-  listenersAttached = true;
+  try {
+    listenersAttached = true;
 
-  // Log when MongoDB successfully connects
-  mongoose.connection.on("connected", () => {
-    logEvent("info", "MongoDB connected");
-  });
+    // Log when MongoDB successfully connects
+    mongoose.connection.on("connected", () => {
+      logEvent("info", "MongoDB connected");
+    });
 
-  // Log and clear cache when MongoDB disconnects
-  mongoose.connection.on("disconnected", () => {
-    logEvent("warn", "MongoDB disconnected");
-    cached.conn = null;
-  });
+    // Log and clear cache when MongoDB disconnects
+    mongoose.connection.on("disconnected", () => {
+      logEvent("warn", "MongoDB disconnected");
+      cached.conn = null;
+    });
 
-  // Log and clear cache on connection errors
-  mongoose.connection.on("error", (error) => {
-    logEvent("error", "MongoDB connection error", {
+    // Log and clear cache on connection errors
+    mongoose.connection.on("error", (error) => {
+      logEvent("error", "MongoDB connection error", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      cached.promise = null;
+    });
+  } catch (error) {
+    listenersAttached = false;
+    logEvent("error", "Failed to attach MongoDB connection listeners", {
       error: error instanceof Error ? error.message : String(error)
     });
-    cached.promise = null;
-  });
+    throw error;
+  }
 }
 
 /**
@@ -74,41 +82,53 @@ export function isDatabaseConfigured() {
  * @throws Error if MONGODB_URI is not configured
  */
 export async function connectToDatabase() {
-  const mongoUri = process.env.MONGODB_URI;
+  try {
+    const mongoUri = process.env.MONGODB_URI;
 
-  // Ensure MongoDB URI is configured
-  if (!mongoUri) {
-    throw new Error("MONGODB_URI is not configured.");
-  }
+    // Ensure MongoDB URI is configured
+    if (!mongoUri) {
+      throw new Error("MONGODB_URI is not configured.");
+    }
 
-  // Attach event listeners for monitoring
-  attachConnectionListeners();
+    // Attach event listeners for monitoring
+    attachConnectionListeners();
 
-  // Return cached connection if it already exists and is ready
-  if (cached.conn && mongoose.connection.readyState === 1) {
+    // Return cached connection if it already exists and is ready
+    if (cached.conn && mongoose.connection.readyState === 1) {
+      return cached.conn;
+    }
+
+    // If no connection promise exists, create a new connection
+    if (!cached.promise) {
+      cached.promise = mongoose
+        .connect(mongoUri, {
+          bufferCommands: false, // Don't queue commands while connecting
+          maxPoolSize: 10, // Maximum number of connections in the pool
+          serverSelectionTimeoutMS: 2000, // Fail fast - reduced from 5000ms
+          socketTimeoutMS: 10000, // Individual socket timeout
+          connectTimeoutMS: 2000 // Initial connection timeout
+        })
+        .then((connection) => connection)
+        .catch((error) => {
+          // Clear cache on connection error
+          cached.promise = null;
+          cached.conn = null;
+          throw error;
+        });
+    }
+
+    // Wait for connection promise to resolve and cache the connection
+    cached.conn = await cached.promise;
     return cached.conn;
-  }
+  } catch (error) {
+    cached.promise = null;
+    cached.conn = null;
 
-  // If no connection promise exists, create a new connection
-  if (!cached.promise) {
-    cached.promise = mongoose
-      .connect(mongoUri, {
-        bufferCommands: false, // Don't queue commands while connecting
-        maxPoolSize: 10, // Maximum number of connections in the pool
-        serverSelectionTimeoutMS: 2000, // Fail fast - reduced from 5000ms
-        socketTimeoutMS: 10000, // Individual socket timeout
-        connectTimeoutMS: 2000 // Initial connection timeout
-      })
-      .then((connection) => connection)
-      .catch((error) => {
-        // Clear cache on connection error
-        cached.promise = null;
-        cached.conn = null;
-        throw error;
-      });
-  }
+    logEvent("error", "connectToDatabase failed", {
+      error: error instanceof Error ? error.message : String(error),
+      readyState: mongoose.connection.readyState
+    });
 
-  // Wait for connection promise to resolve and cache the connection
-  cached.conn = await cached.promise;
-  return cached.conn;
+    throw error;
+  }
 }

@@ -88,58 +88,78 @@ export default function CommandPalette({
           role="dialog"
         >
           <div className="min-h-0 border-b border-slate-200 p-4 dark:border-slate-800 lg:border-b-0 lg:border-r">
-            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-all duration-200 ease-out focus-within:border-[rgb(var(--accent-rgb))] focus-within:ring-2 focus-within:ring-[rgba(var(--accent-rgb),0.18)] dark:border-slate-700 dark:bg-slate-900">
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4 text-slate-400 dark:text-slate-500"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
+            <div className="flex items-center gap-3">
+              <div className="flex flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 transition-all duration-200 ease-out focus-within:border-[rgb(var(--accent-rgb))] focus-within:ring-2 focus-within:ring-[rgba(var(--accent-rgb),0.18)] dark:border-slate-700 dark:bg-slate-900">
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4 text-slate-400 dark:text-slate-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+                </svg>
+                <input
+                  aria-autocomplete="list"
+                  aria-controls="command-palette-results"
+                  aria-label="Search memories"
+                  className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={async (event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setActiveIndex((current) =>
+                        results.length === 0 ? 0 : (current + 1) % results.length
+                      );
+                    }
+
+                    if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setActiveIndex((current) =>
+                        results.length === 0
+                          ? 0
+                          : (current - 1 + results.length) % results.length
+                      );
+                    }
+
+                    if (event.key === "Enter" && activeTemplate) {
+                      event.preventDefault();
+                      await handleCopy(activeTemplate);
+                    }
+
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      onClose();
+                    }
+                  }}
+                  placeholder="Search or type to copy instantly..."
+                  ref={inputRef}
+                  value={query}
+                />
+                <kbd className="hidden rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400 sm:block">
+                  Enter
+                </kbd>
+              </div>
+
+              <button
+                aria-label="Close command palette"
+                className="pressable inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 hover:border-[rgb(var(--accent-rgb))] hover:bg-[rgba(var(--accent-rgb),0.08)] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                onClick={onClose}
+                type="button"
               >
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-              </svg>
-              <input
-                aria-autocomplete="list"
-                aria-controls="command-palette-results"
-                aria-label="Search memories"
-                className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100 dark:placeholder:text-slate-500"
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={async (event) => {
-                  if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    setActiveIndex((current) =>
-                      results.length === 0 ? 0 : (current + 1) % results.length
-                    );
-                  }
-
-                  if (event.key === "ArrowUp") {
-                    event.preventDefault();
-                    setActiveIndex((current) =>
-                      results.length === 0
-                        ? 0
-                        : (current - 1 + results.length) % results.length
-                    );
-                  }
-
-                  if (event.key === "Enter" && activeTemplate) {
-                    event.preventDefault();
-                    await handleCopy(activeTemplate);
-                  }
-
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    onClose();
-                  }
-                }}
-                placeholder="Search or type to copy instantly..."
-                ref={inputRef}
-                value={query}
-              />
-              <kbd className="hidden rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400 sm:block">
-                Enter
-              </kbd>
+                <svg
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
+                </svg>
+              </button>
             </div>
 
             <div

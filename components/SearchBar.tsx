@@ -15,6 +15,7 @@ import { classNames } from "@/utils/helpers";
 type SearchBarProps = {
   query: string;
   isLoading: boolean;
+  isLoggingOut: boolean;
   resultCount: number;
   theme: "light" | "dark";
   accent: ThemeAccent;
@@ -35,6 +36,7 @@ type SearchBarProps = {
   onImport: (file: File) => void;
   onActiveViewChange: (view: TemplateView) => void;
   onCollectionFilterChange: (value: string) => void;
+  onLogout: () => void;
 };
 
 const VIEW_OPTIONS: Array<{ value: TemplateView; label: string }> = [
@@ -51,6 +53,7 @@ const ACCENTS: ThemeAccent[] = ["amber", "emerald", "rose"];
 export default function SearchBar({
   query,
   isLoading,
+  isLoggingOut,
   resultCount,
   theme,
   accent,
@@ -70,7 +73,8 @@ export default function SearchBar({
   onExport,
   onImport,
   onActiveViewChange,
-  onCollectionFilterChange
+  onCollectionFilterChange,
+  onLogout
 }: SearchBarProps) {
   const [draftQuery, setDraftQuery] = useState(query);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -266,6 +270,15 @@ export default function SearchBar({
               type="button"
             >
               Paste memory
+            </button>
+
+            <button
+              className="pressable inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-rose-500/40 dark:hover:bg-rose-500/10 dark:hover:text-rose-200"
+              disabled={isLoggingOut}
+              onClick={onLogout}
+              type="button"
+            >
+              {isLoggingOut ? "Signing out..." : "Logout"}
             </button>
           </div>
         </div>

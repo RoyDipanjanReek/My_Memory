@@ -3,6 +3,16 @@
 
 type LogLevel = "info" | "warn" | "error";
 
+function sanitizeContext(context: Record<string, unknown>) {
+  try {
+    return JSON.parse(JSON.stringify(context)) as Record<string, unknown>;
+  } catch {
+    return {
+      context: "Failed to serialize log context"
+    };
+  }
+}
+
 /**
  * Logs an event with the specified level and context
  * Routes to appropriate console method based on severity level
@@ -15,24 +25,35 @@ export function logEvent(
   message: string,
   context: Record<string, unknown> = {}
 ) {
-  // Build the log payload with timestamp and context
-  const payload = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...context
-  };
+  try {
+    // Build the log payload with timestamp and context
+    const payload = {
+      level,
+      message,
+      timestamp: new Date().toISOString(),
+      ...sanitizeContext(context)
+    };
 
-  // Route to appropriate console method based on level
-  if (level === "error") {
-    console.error(payload);
-    return;
+    // Route to appropriate console method based on level
+    if (level === "error") {
+      console.error(payload);
+      return;
+    }
+
+    if (level === "warn") {
+      console.warn(payload);
+      return;
+    }
+
+    console.info(payload);
+  } catch (error) {
+    console.error({
+      level: "error",
+      message: "Logging failed",
+      originalLevel: level,
+      originalMessage: message,
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
-
-  if (level === "warn") {
-    console.warn(payload);
-    return;
-  }
-
-  console.info(payload);
 }

@@ -40,7 +40,7 @@ export default function RootLayout({
                   var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                   var shouldUseDark = storedTheme ? storedTheme === "dark" : systemDark;
                   document.documentElement.classList.toggle("dark", shouldUseDark);
-                  document.documentElement.dataset.accent = storedAccent || "amber";
+                  document.documentElement.dataset.accent = storedAccent || "rose";
                 } catch (error) {}
               })();
             `
