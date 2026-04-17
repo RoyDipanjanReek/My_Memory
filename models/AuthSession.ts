@@ -10,8 +10,14 @@ import mongoose, { Model, Schema } from "mongoose";
 export interface AuthSessionDocument extends mongoose.Document {
   userId: mongoose.Types.ObjectId; // Reference to the User document
   tokenHash: string; // Hash of the authentication token
+  userAgent: string | null;
+  ipAddress: string | null;
+  deviceLabel: string | null;
   expiresAt: Date; // When this session expires
   lastUsedAt: Date; // When this session was last used
+  lastRotatedAt: Date;
+  revokedAt: Date | null;
+  rotatedFromId: mongoose.Types.ObjectId | null;
   createdAt: Date; // When the session was created
   updatedAt: Date; // When the session was last modified
 }
@@ -35,6 +41,18 @@ const AuthSessionSchema = new Schema<AuthSessionDocument>(
       required: true,
       unique: true // Each token should be unique
     },
+    userAgent: {
+      type: String,
+      default: null
+    },
+    ipAddress: {
+      type: String,
+      default: null
+    },
+    deviceLabel: {
+      type: String,
+      default: null
+    },
     // When this session should automatically expire
     expiresAt: {
       type: Date,
@@ -44,6 +62,19 @@ const AuthSessionSchema = new Schema<AuthSessionDocument>(
     lastUsedAt: {
       type: Date,
       default: Date.now
+    },
+    lastRotatedAt: {
+      type: Date,
+      default: Date.now
+    },
+    revokedAt: {
+      type: Date,
+      default: null
+    },
+    rotatedFromId: {
+      type: Schema.Types.ObjectId,
+      ref: "AuthSession",
+      default: null
     }
   },
   {
@@ -55,6 +86,7 @@ const AuthSessionSchema = new Schema<AuthSessionDocument>(
 // TTL index - MongoDB automatically deletes expired documents
 // expireAfterSeconds: 0 means delete when expiresAt time is reached
 AuthSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+AuthSessionSchema.index({ userId: 1, revokedAt: 1, expiresAt: 1 });
 
 /**
  * Get or create the AuthSession model

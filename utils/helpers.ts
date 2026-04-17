@@ -160,7 +160,8 @@ export function isTemplateView(value: string): value is TemplateView {
     "recent",
     "copied",
     "valuable",
-    "archived"
+    "archived",
+    "trash"
   ].includes(value);
 }
 
@@ -430,6 +431,8 @@ function applyViewFilter(templates: TemplateRecord[], view: TemplateView) {
       );
     case "archived":
       return templates.filter((template) => template.archived);
+    case "trash":
+      return templates.filter((template) => Boolean(template.deletedAt));
     default:
       return templates.filter((template) => !template.archived);
   }

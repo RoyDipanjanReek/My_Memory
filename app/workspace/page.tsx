@@ -12,7 +12,7 @@ export default async function WorkspacePage() {
 
   if (!dbUnavailable) {
     try {
-      const result = await getTemplates(user.id, {
+      const result = await getTemplates(user, {
         includeArchived: true,
         limit: 24
       });

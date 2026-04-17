@@ -12,7 +12,8 @@ export const TEMPLATE_VIEWS = [
   "recent",
   "copied",
   "valuable",
-  "archived"
+  "archived",
+  "trash"
 ] as const;
 export const TEMPLATE_THEME_ACCENTS = ["amber", "emerald", "rose"] as const;
 
@@ -88,12 +89,23 @@ export type TemplatePatchRequest =
   | { action: "pin"; value?: boolean }
   | { action: "archive"; value?: boolean }
   | { action: "restore" }
+  | { action: "trash" }
+  | { action: "restore-trash" }
+  | { action: "purge" }
   | { action: "sanitize-tags" }
   | { action: "collections"; collections: string[] }
   | { action: "update"; data: TemplateUpdateInput };
 
 export interface TemplateBulkActionRequest {
-  action: "archive" | "restore" | "delete" | "favorite" | "pin" | "normalize-tags";
+  action:
+    | "archive"
+    | "restore"
+    | "delete"
+    | "purge"
+    | "restore-trash"
+    | "favorite"
+    | "pin"
+    | "normalize-tags";
   ids: string[];
   value?: boolean;
 }

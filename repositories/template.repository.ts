@@ -1,6 +1,5 @@
 // Template Repository - Data access layer for template operations
 // Handles all database queries for storing, retrieving, and manipulating templates
-// Includes search, filtering, pagination, and bulk operations
 
 import { connectToDatabase } from "@/lib/mongodb";
 import TemplateModel from "@/models/Template";
@@ -87,7 +86,6 @@ function toTemplateList(templates: LeanTemplate[]) {
 function getPaginationValues(options: SearchOptions) {
   const limit = Math.min(Math.max(options.limit ?? 24, 1), 100);
   const offset = options.cursor ? Number(options.cursor) || 0 : 0;
-
   return { limit, offset };
 }
 
@@ -103,9 +101,14 @@ function toPaginatedResult(templates: LeanTemplate[], limit: number, offset: num
 
 function buildFilter(ownerId: string, options: SearchOptions = {}) {
   const filter: Record<string, unknown> = {
-    ownerId,
-    deletedAt: null
+    ownerId
   };
+
+  if (options.view === "trash") {
+    filter.deletedAt = { $ne: null };
+  } else {
+    filter.deletedAt = null;
+  }
 
   if (!options.includeArchived && options.view !== "archived") {
     filter.archived = false;
@@ -138,6 +141,16 @@ function buildFilter(ownerId: string, options: SearchOptions = {}) {
   return filter;
 }
 
+export async function purgeExpiredTrashedTemplates(retentionDays = 30) {
+  await connectToDatabase();
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  await TemplateModel.deleteMany({
+    deletedAt: {
+      $lt: cutoff
+    }
+  });
+}
+
 export async function createTemplate(data: TemplateInput) {
   await connectToDatabase();
   const created = await TemplateModel.create(data);
@@ -167,10 +180,18 @@ export async function findDuplicateTemplate(ownerId: string, contentHash: string
 }
 
 export async function getAllTemplates(ownerId: string, options: SearchOptions = {}) {
+  await purgeExpiredTrashedTemplates();
   await connectToDatabase();
   const { limit, offset } = getPaginationValues(options);
   const templates = await TemplateModel.find(buildFilter(ownerId, options))
-    .sort({ pinned: -1, favorite: -1, lastCopiedAt: -1, lastUsed: -1, updatedAt: -1 })
+    .sort({
+      deletedAt: -1,
+      pinned: -1,
+      favorite: -1,
+      lastCopiedAt: -1,
+      lastUsed: -1,
+      updatedAt: -1
+    })
     .skip(offset)
     .limit(limit + 1)
     .lean<LeanTemplate[]>();
@@ -178,11 +199,8 @@ export async function getAllTemplates(ownerId: string, options: SearchOptions = 
   return toPaginatedResult(templates, limit, offset);
 }
 
-export async function searchTemplates(
-  ownerId: string,
-  query = "",
-  options: SearchOptions = {}
-) {
+export async function searchTemplates(ownerId: string, query = "", options: SearchOptions = {}) {
+  await purgeExpiredTrashedTemplates();
   await connectToDatabase();
 
   const trimmedQuery = query.trim();
@@ -191,7 +209,6 @@ export async function searchTemplates(
 
   if (trimmedQuery) {
     const regex = new RegExp(escapeRegExp(trimmedQuery), "i");
-
     filter.$or = [
       { title: { $regex: regex } },
       { content: { $regex: regex } },
@@ -201,7 +218,14 @@ export async function searchTemplates(
   }
 
   const templates = await TemplateModel.find(filter)
-    .sort({ pinned: -1, favorite: -1, lastCopiedAt: -1, lastUsed: -1, updatedAt: -1 })
+    .sort({
+      deletedAt: -1,
+      pinned: -1,
+      favorite: -1,
+      lastCopiedAt: -1,
+      lastUsed: -1,
+      updatedAt: -1
+    })
     .skip(offset)
     .limit(limit + 1)
     .lean<LeanTemplate[]>();
@@ -209,35 +233,35 @@ export async function searchTemplates(
   return toPaginatedResult(templates, limit, offset);
 }
 
-export async function getTemplateById(ownerId: string, id: string) {
+export async function getTemplateById(ownerId: string, id: string, includeTrashed = false) {
   await connectToDatabase();
   const template = await TemplateModel.findOne({
     _id: id,
     ownerId,
-    deletedAt: null
+    ...(includeTrashed ? {} : { deletedAt: null })
   }).lean<LeanTemplate | null>();
 
   return toTemplateRecord(template);
 }
 
-export async function getTemplatesByIds(ownerId: string, ids: string[]) {
+export async function getTemplatesByIds(ownerId: string, ids: string[], includeTrashed = false) {
   await connectToDatabase();
   const templates = await TemplateModel.find({
     _id: { $in: ids },
     ownerId,
-    deletedAt: null
+    ...(includeTrashed ? {} : { deletedAt: null })
   }).lean<LeanTemplate[]>();
 
   return toTemplateList(templates);
 }
 
-export async function updateTemplate(id: string, ownerId: string, update: Record<string, unknown>) {
+export async function updateTemplate(id: string, ownerId: string, update: Record<string, unknown>, includeTrashed = false) {
   await connectToDatabase();
   const updated = await TemplateModel.findOneAndUpdate(
     {
       _id: id,
       ownerId,
-      deletedAt: null
+      ...(includeTrashed ? {} : { deletedAt: null })
     },
     update,
     {
@@ -248,9 +272,9 @@ export async function updateTemplate(id: string, ownerId: string, update: Record
   return toTemplateRecord(updated);
 }
 
-export async function deleteTemplate(id: string, ownerId: string) {
+export async function trashTemplate(id: string, ownerId: string) {
   await connectToDatabase();
-  const deleted = await TemplateModel.findOneAndUpdate(
+  const trashed = await TemplateModel.findOneAndUpdate(
     {
       _id: id,
       ownerId,
@@ -266,6 +290,38 @@ export async function deleteTemplate(id: string, ownerId: string) {
       new: true
     }
   ).lean<LeanTemplate | null>();
+
+  return toTemplateRecord(trashed);
+}
+
+export async function restoreTemplateFromTrash(id: string, ownerId: string) {
+  await connectToDatabase();
+  const restored = await TemplateModel.findOneAndUpdate(
+    {
+      _id: id,
+      ownerId,
+      deletedAt: { $ne: null }
+    },
+    {
+      $set: {
+        deletedAt: null
+      }
+    },
+    {
+      new: true
+    }
+  ).lean<LeanTemplate | null>();
+
+  return toTemplateRecord(restored);
+}
+
+export async function purgeTemplate(id: string, ownerId: string) {
+  await connectToDatabase();
+  const deleted = await TemplateModel.findOneAndDelete({
+    _id: id,
+    ownerId,
+    deletedAt: { $ne: null }
+  }).lean<LeanTemplate | null>();
 
   return toTemplateRecord(deleted);
 }
@@ -294,17 +350,18 @@ export async function markTemplateUsed(id: string, ownerId: string) {
 export async function bulkUpdateTemplates(
   ownerId: string,
   ids: string[],
-  update: Record<string, unknown>
+  update: Record<string, unknown>,
+  includeTrashed = false
 ) {
   await connectToDatabase();
   await TemplateModel.updateMany(
     {
       _id: { $in: ids },
       ownerId,
-      deletedAt: null
+      ...(includeTrashed ? {} : { deletedAt: null })
     },
     update
   );
 
-  return getTemplatesByIds(ownerId, ids);
+  return getTemplatesByIds(ownerId, ids, includeTrashed);
 }

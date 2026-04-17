@@ -13,6 +13,10 @@ export interface UserDocument extends mongoose.Document {
   email: string; // Unique email address
   passwordHash: string; // Bcrypt hash of the password
   role: UserRole; // User's role: "admin" or "member"
+  emailVerifiedAt: Date | null;
+  passwordChangedAt: Date | null;
+  failedLoginCount: number;
+  lockedUntil: Date | null;
   createdAt: Date; // When the account was created
   updatedAt: Date; // When the account was last modified
 }
@@ -47,6 +51,22 @@ const UserSchema = new Schema<UserDocument>(
       type: String,
       enum: ["admin", "member"],
       default: "member"
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null
+    },
+    passwordChangedAt: {
+      type: Date,
+      default: null
+    },
+    failedLoginCount: {
+      type: Number,
+      default: 0
+    },
+    lockedUntil: {
+      type: Date,
+      default: null
     }
   },
   {

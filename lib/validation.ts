@@ -2,7 +2,8 @@
 // Ensures all data sent to the application follows expected structure and constraints
 
 import { z } from "zod";
-import { TEMPLATE_CATEGORIES } from "@/types/template.types";
+import { TEMPLATE_CATEGORIES, TEMPLATE_VIEWS } from "@/types/template.types";
+import { USER_ROLES } from "@/types/auth.types";
 
 /**
  * Validates template category enum
@@ -58,6 +59,12 @@ export const templatePatchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("archive"), value: z.boolean().optional() }),
   // Restore archived template
   z.object({ action: z.literal("restore") }),
+  // Move template to trash
+  z.object({ action: z.literal("trash") }),
+  // Restore template from trash
+  z.object({ action: z.literal("restore-trash") }),
+  // Permanently delete a trashed template
+  z.object({ action: z.literal("purge") }),
   // Sanitize tags (remove invalid characters)
   z.object({ action: z.literal("sanitize-tags") }),
   // Update collections
@@ -80,7 +87,16 @@ export const templatePatchSchema = z.discriminatedUnion("action", [
  */
 export const templateBulkSchema = z.object({
   // Type of bulk action to perform
-  action: z.enum(["archive", "restore", "delete", "favorite", "pin", "normalize-tags"]),
+  action: z.enum([
+    "archive",
+    "restore",
+    "delete",
+    "purge",
+    "restore-trash",
+    "favorite",
+    "pin",
+    "normalize-tags"
+  ]),
   // IDs of templates to operate on (1-100 max)
   ids: z.array(z.string().trim().min(1)).min(1).max(100),
   // Optional value for toggle actions
@@ -99,4 +115,41 @@ export const templateImportSchema = z.object({
     .array(templateCreateSchema)
     .min(1, "Import must include at least one template.")
     .max(200, "Import is limited to 200 templates at a time.")
+});
+
+export const authRegisterSchema = z.object({
+  name: z.string().trim().min(2, "Name is required.").max(60),
+  email: z.string().trim().email("Enter a valid email."),
+  password: z.string().min(8, "Password must be at least 8 characters.")
+});
+
+export const authLoginSchema = z.object({
+  email: z.string().trim().email("Enter a valid email."),
+  password: z.string().min(1, "Password is required.")
+});
+
+export const emailTokenSchema = z.object({
+  token: z.string().trim().min(16, "Invalid token.")
+});
+
+export const passwordResetRequestSchema = z.object({
+  email: z.string().trim().email("Enter a valid email.")
+});
+
+export const passwordResetConfirmSchema = z.object({
+  token: z.string().trim().min(16, "Invalid reset token."),
+  password: z.string().min(8, "Password must be at least 8 characters.")
+});
+
+export const roleSchema = z.enum(USER_ROLES);
+
+export const templateQuerySchema = z.object({
+  q: z.string().optional(),
+  category: z.enum([...TEMPLATE_CATEGORIES, "all"]).optional(),
+  tag: z.string().optional(),
+  collection: z.string().optional(),
+  view: z.enum(TEMPLATE_VIEWS).or(z.literal("all")).optional(),
+  archived: z.enum(["true", "false"]).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  cursor: z.string().optional()
 });

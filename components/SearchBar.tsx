@@ -45,7 +45,8 @@ const VIEW_OPTIONS: Array<{ value: TemplateView; label: string }> = [
   { value: "pinned", label: "Pinned" },
   { value: "copied", label: "Recently copied" },
   { value: "valuable", label: "Most valuable" },
-  { value: "archived", label: "Archived" }
+  { value: "archived", label: "Archived" },
+  { value: "trash", label: "Trash" }
 ];
 
 const ACCENTS: ThemeAccent[] = ["amber", "emerald", "rose"];

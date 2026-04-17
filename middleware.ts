@@ -4,7 +4,14 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/constants";
 
 // Routes that require authentication
-const PROTECTED_PATHS = ["/workspace", "/api/templates", "/api/search"];
+const PROTECTED_PATHS = [
+  "/workspace",
+  "/api/templates",
+  "/api/search",
+  "/api/auth/session",
+  "/api/auth/sessions",
+  "/api/metrics"
+];
 
 // Authentication-related pages that should redirect to workspace if already logged in
 const AUTH_PAGES = ["/login", "/signup"];
@@ -69,5 +76,14 @@ export function middleware(request: NextRequest) {
 
 // Configuration for which routes this middleware should run on
 export const config = {
-  matcher: ["/workspace/:path*", "/login", "/signup", "/api/templates/:path*", "/api/search"]
+  matcher: [
+    "/workspace/:path*",
+    "/login",
+    "/signup",
+    "/api/templates/:path*",
+    "/api/search",
+    "/api/auth/session",
+    "/api/auth/sessions/:path*",
+    "/api/metrics"
+  ]
 };
