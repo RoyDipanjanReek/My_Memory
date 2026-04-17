@@ -1,12 +1,11 @@
-// Individual Template API Route
-// GET /api/templates/[id] - Retrieve specific template
-// PATCH /api/templates/[id] - Update specific template
-// DELETE /api/templates/[id] - Delete specific template
-
 import { NextResponse } from "next/server";
-import { requireUserFromRequest } from "@/lib/auth";
+import { requireSessionFromRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/api-response";
+import { runIdempotentJsonMutation } from "@/lib/idempotency";
+import { incrementMetric } from "@/lib/metrics";
 import { isDatabaseConfigured } from "@/lib/mongodb";
 import { buildRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
+import { ensureSameOriginRequest, getRequestContext, hashRequestBody } from "@/lib/security";
 import { logEvent } from "@/lib/logger";
 import { AuthenticationError } from "@/services/auth.service";
 import {
@@ -21,40 +20,53 @@ import { toErrorResponse } from "@/utils/helpers";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function ensureConfigured(context: ReturnType<typeof getRequestContext>) {
+  if (!isDatabaseConfigured()) {
+    return jsonResponse({ error: "MONGODB_URI is not configured." }, { status: 503, context });
+  }
+
+  return null;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { error: "MONGODB_URI is not configured." },
-      { status: 503 }
-    );
+  const context = getRequestContext(request);
+  const configuredResponse = ensureConfigured(context);
+  if (configuredResponse) {
+    return configuredResponse;
   }
 
   let ownerId = "unknown";
 
   try {
-    const user = await requireUserFromRequest(request);
+    const auth = await requireSessionFromRequest(request);
+    const { user, rotatedToken, expiresAt } = auth;
     ownerId = user.id;
-    const template = await getTemplate(user.id, params.id);
-    return NextResponse.json({ data: template });
+    const template = await getTemplate(user, params.id, context);
+    incrementMetric("template.read.success");
+    return jsonResponse({ data: template }, {
+      context,
+      rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+    });
   } catch (error) {
-    const status =
-      error instanceof ValidationError ||
-      error instanceof NotFoundError ||
-      error instanceof AuthenticationError
-        ? error.statusCode
-        : 500;
-
+    incrementMetric("template.read.error");
     logEvent("error", "Failed to load template", {
       ownerId,
       templateId: params.id,
+      requestId: context.requestId,
       error: error instanceof Error ? error.message : String(error)
     });
 
-    return NextResponse.json(toErrorResponse(error, "Failed to load template."), {
-      status
+    return jsonResponse(toErrorResponse(error, "Failed to load template."), {
+      status:
+        error instanceof ValidationError ||
+        error instanceof NotFoundError ||
+        error instanceof AuthenticationError
+          ? error.statusCode
+          : 500,
+      context
     });
   }
 }
@@ -63,48 +75,71 @@ export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { error: "MONGODB_URI is not configured." },
-      { status: 503 }
-    );
+  const context = getRequestContext(request);
+  const configuredResponse = ensureConfigured(context);
+  if (configuredResponse) {
+    return configuredResponse;
   }
 
   let ownerId = "unknown";
 
   try {
-    const user = await requireUserFromRequest(request);
+    ensureSameOriginRequest(request);
+    const auth = await requireSessionFromRequest(request);
+    const { user, rotatedToken, expiresAt } = auth;
     ownerId = user.id;
     const limitCheck = checkRateLimit(`${user.id}:templates:delete`, 20, 60_000);
 
     if (!limitCheck.ok) {
-      return NextResponse.json(
+      incrementMetric("template.delete.rate_limited");
+      return jsonResponse(
         { error: "Delete rate limit exceeded. Please retry shortly." },
-        { status: 429, headers: buildRateLimitHeaders(limitCheck) }
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(limitCheck),
+          context,
+          rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+        }
       );
     }
 
-    const deleted = await deleteTemplate(user.id, params.id);
-    return NextResponse.json(
-      { data: deleted },
-      { headers: buildRateLimitHeaders(limitCheck) }
+    const body = { id: params.id };
+    return runIdempotentJsonMutation(
+      {
+        ownerId: user.id,
+        method: request.method,
+        path: context.path,
+        key: request.headers.get("idempotency-key"),
+        requestHash: hashRequestBody(body),
+        context,
+        rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+      },
+      async () => {
+        const deleted = await deleteTemplate(user, params.id, context);
+        incrementMetric("template.delete.success");
+        return {
+          body: { data: deleted },
+          headers: buildRateLimitHeaders(limitCheck)
+        };
+      }
     );
   } catch (error) {
-    const status =
-      error instanceof ValidationError ||
-      error instanceof NotFoundError ||
-      error instanceof AuthenticationError
-        ? error.statusCode
-        : 500;
-
+    incrementMetric("template.delete.error");
     logEvent("error", "Failed to delete template", {
       ownerId,
       templateId: params.id,
+      requestId: context.requestId,
       error: error instanceof Error ? error.message : String(error)
     });
 
-    return NextResponse.json(toErrorResponse(error, "Failed to delete template."), {
-      status
+    return jsonResponse(toErrorResponse(error, "Failed to delete template."), {
+      status:
+        error instanceof ValidationError ||
+        error instanceof NotFoundError ||
+        error instanceof AuthenticationError
+          ? error.statusCode
+          : 500,
+      context
     });
   }
 }
@@ -113,50 +148,71 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { error: "MONGODB_URI is not configured." },
-      { status: 503 }
-    );
+  const context = getRequestContext(request);
+  const configuredResponse = ensureConfigured(context);
+  if (configuredResponse) {
+    return configuredResponse;
   }
 
   let ownerId = "unknown";
 
   try {
-    const user = await requireUserFromRequest(request);
+    ensureSameOriginRequest(request);
+    const auth = await requireSessionFromRequest(request);
+    const { user, rotatedToken, expiresAt } = auth;
     ownerId = user.id;
     const limitCheck = checkRateLimit(`${user.id}:templates:patch`, 40, 60_000);
 
     if (!limitCheck.ok) {
-      return NextResponse.json(
+      incrementMetric("template.patch.rate_limited");
+      return jsonResponse(
         { error: "Update rate limit exceeded. Please retry shortly." },
-        { status: 429, headers: buildRateLimitHeaders(limitCheck) }
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(limitCheck),
+          context,
+          rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+        }
       );
     }
 
     const body = await request.json().catch(() => ({}));
-    const updated = await updateTemplate(user.id, params.id, body);
-
-    return NextResponse.json(
-      { data: updated },
-      { headers: buildRateLimitHeaders(limitCheck) }
+    return runIdempotentJsonMutation(
+      {
+        ownerId: user.id,
+        method: request.method,
+        path: context.path,
+        key: request.headers.get("idempotency-key"),
+        requestHash: hashRequestBody(body),
+        context,
+        rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+      },
+      async () => {
+        const updated = await updateTemplate(user, params.id, body, context);
+        incrementMetric("template.patch.success");
+        return {
+          body: { data: updated },
+          headers: buildRateLimitHeaders(limitCheck)
+        };
+      }
     );
   } catch (error) {
-    const status =
-      error instanceof ValidationError ||
-      error instanceof NotFoundError ||
-      error instanceof AuthenticationError
-        ? error.statusCode
-        : 500;
-
+    incrementMetric("template.patch.error");
     logEvent("error", "Failed to update template", {
       ownerId,
       templateId: params.id,
+      requestId: context.requestId,
       error: error instanceof Error ? error.message : String(error)
     });
 
-    return NextResponse.json(toErrorResponse(error, "Failed to update template."), {
-      status
+    return jsonResponse(toErrorResponse(error, "Failed to update template."), {
+      status:
+        error instanceof ValidationError ||
+        error instanceof NotFoundError ||
+        error instanceof AuthenticationError
+          ? error.statusCode
+          : 500,
+      context
     });
   }
 }

@@ -1,12 +1,11 @@
-// Template Export API Route
-// GET /api/templates/export - Exports templates to JSON format
-// Allows users to backup their templates
-
-import { NextResponse } from "next/server";
-import { requireUserFromRequest } from "@/lib/auth";
+import { requireSessionFromRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/api-response";
+import { incrementMetric } from "@/lib/metrics";
 import { isDatabaseConfigured } from "@/lib/mongodb";
 import { buildRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
+import { getRequestContext } from "@/lib/security";
 import { logEvent } from "@/lib/logger";
+import { AuthenticationError } from "@/services/auth.service";
 import { exportTemplateCatalog } from "@/services/template.service";
 import { toErrorResponse } from "@/utils/helpers";
 
@@ -14,44 +13,55 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const context = getRequestContext(request);
+
   if (!isDatabaseConfigured()) {
-    return NextResponse.json(
-      { error: "MONGODB_URI is not configured." },
-      { status: 503 }
-    );
+    return jsonResponse({ error: "MONGODB_URI is not configured." }, { status: 503, context });
   }
 
   let ownerId = "unknown";
 
   try {
-    const user = await requireUserFromRequest(request);
+    const auth = await requireSessionFromRequest(request);
+    const { user, rotatedToken, expiresAt } = auth;
     ownerId = user.id;
     const limitCheck = checkRateLimit(`${user.id}:templates:export`, 15, 60_000);
 
     if (!limitCheck.ok) {
-      return NextResponse.json(
+      incrementMetric("templates.export.rate_limited");
+      return jsonResponse(
         { error: "Export rate limit exceeded. Please retry shortly." },
-        { status: 429, headers: buildRateLimitHeaders(limitCheck) }
+        {
+          status: 429,
+          headers: buildRateLimitHeaders(limitCheck),
+          context,
+          rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
+        }
       );
     }
 
-    const payload = await exportTemplateCatalog(user.id);
+    const payload = await exportTemplateCatalog(user, context);
+    incrementMetric("templates.export.success");
 
-    return NextResponse.json(payload, {
+    return jsonResponse(payload, {
       headers: {
         "Content-Disposition": `attachment; filename="developer-memory-export.json"`,
         ...Object.fromEntries(buildRateLimitHeaders(limitCheck).entries())
-      }
+      },
+      context,
+      rotatedSession: rotatedToken ? { token: rotatedToken, expiresAt } : null
     });
   } catch (error) {
+    incrementMetric("templates.export.error");
     logEvent("error", "Failed to export templates", {
       ownerId,
+      requestId: context.requestId,
       error: error instanceof Error ? error.message : String(error)
     });
 
-    return NextResponse.json(toErrorResponse(error, "Failed to export templates."), {
-      status: error instanceof AuthenticationError ? error.statusCode : 500
+    return jsonResponse(toErrorResponse(error, "Failed to export templates."), {
+      status: error instanceof AuthenticationError ? error.statusCode : 500,
+      context
     });
   }
 }
-import { AuthenticationError } from "@/services/auth.service";

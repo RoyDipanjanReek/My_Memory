@@ -1,23 +1,32 @@
-// Session/Current User API Route
-// GET /api/auth/session - Returns current authenticated user information
-// Used by client to check authentication status
-
-import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME } from "@/lib/constants";
-import { getAuthenticatedUser } from "@/services/auth.service";
+import { getSessionTokenFromRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/api-response";
+import { incrementMetric } from "@/lib/metrics";
+import { getRequestContext } from "@/lib/security";
+import { getAuthenticatedSession } from "@/services/auth.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const match = cookieHeader.match(new RegExp(`${SESSION_COOKIE_NAME}=([^;]+)`));
-  const sessionToken = match?.[1] ?? null;
-  const user = await getAuthenticatedUser(sessionToken);
+  const context = getRequestContext(request);
+  const sessionToken = getSessionTokenFromRequest(request);
+  const session = await getAuthenticatedSession(sessionToken, context);
 
-  return NextResponse.json({
-    data: {
-      user
+  incrementMetric("auth.session.read");
+
+  return jsonResponse(
+    {
+      data: {
+        user: session?.user ?? null,
+        session: session?.session ?? null
+      }
+    },
+    {
+      context,
+      rotatedSession:
+        session?.rotatedToken && session.expiresAt
+          ? { token: session.rotatedToken, expiresAt: session.expiresAt }
+          : null
     }
-  });
+  );
 }

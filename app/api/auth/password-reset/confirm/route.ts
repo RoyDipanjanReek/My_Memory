@@ -3,8 +3,10 @@ import { jsonResponse } from "@/lib/api-response";
 import { incrementMetric } from "@/lib/metrics";
 import { buildRateLimitHeaders, checkRateLimit } from "@/lib/rate-limit";
 import { ensureSameOriginRequest, getRequestContext } from "@/lib/security";
-import { logEvent } from "@/lib/logger";
-import { AuthValidationError, registerUser } from "@/services/auth.service";
+import {
+  AuthValidationError,
+  resetPasswordWithToken
+} from "@/services/auth.service";
 import { toErrorResponse } from "@/utils/helpers";
 
 export const runtime = "nodejs";
@@ -15,29 +17,22 @@ export async function POST(request: Request) {
 
   try {
     ensureSameOriginRequest(request);
-    const limitCheck = checkRateLimit(`auth:register:${context.ipAddress ?? "unknown"}`, 8, 60_000);
+    const limitCheck = checkRateLimit(`password-reset-confirm:${context.ipAddress ?? "unknown"}`, 10, 60_000);
 
     if (!limitCheck.ok) {
-      incrementMetric("auth.register.rate_limited");
       return jsonResponse(
-        { error: "Too many registration attempts. Please retry shortly." },
+        { error: "Too many reset attempts. Please retry shortly." },
         { status: 429, headers: buildRateLimitHeaders(limitCheck), context }
       );
     }
 
     const body = await request.json();
-    const result = await registerUser(body, getSessionDeviceInfo(request), context);
-    incrementMetric("auth.register.success");
+    const result = await resetPasswordWithToken(body, getSessionDeviceInfo(request), context);
+    incrementMetric("auth.password_reset.confirm");
 
     return jsonResponse(
+      { data: result.user },
       {
-        data: result.user,
-        meta: {
-          verificationToken: result.verificationToken
-        }
-      },
-      {
-        status: 201,
         headers: buildRateLimitHeaders(limitCheck),
         context,
         rotatedSession: {
@@ -47,13 +42,7 @@ export async function POST(request: Request) {
       }
     );
   } catch (error) {
-    incrementMetric("auth.register.error");
-    logEvent("error", "Failed to register user", {
-      requestId: context.requestId,
-      error: error instanceof Error ? error.message : String(error)
-    });
-
-    return jsonResponse(toErrorResponse(error, "Failed to register user."), {
+    return jsonResponse(toErrorResponse(error, "Failed to reset password."), {
       status: error instanceof AuthValidationError ? error.statusCode : 500,
       context
     });
