@@ -24,7 +24,7 @@ export function LandingNavbar() {
           </span>
           <span>
             <span className="block text-sm font-semibold tracking-wide text-white">
-              MemoryOS
+              MyMemory
             </span>
             <span className="block text-xs text-slate-400">Developer memory platform</span>
           </span>

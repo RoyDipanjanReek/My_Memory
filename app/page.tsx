@@ -12,9 +12,9 @@ import { LandingSocialProof } from "@/components/landing/LandingSocialProof";
 import { LandingTestimonials } from "@/components/landing/LandingTestimonials";
 
 export const metadata: Metadata = {
-  title: "MemoryOS | The Developer Memory Layer for Modern Teams",
+  title: "MyMemory | The Developer Memory Layer for Modern Teams",
   description:
-    "MemoryOS helps teams capture reusable code, replies, notes, and prompts in one fast, searchable workspace built for instant retrieval."
+    "MyMemory helps teams capture reusable code, replies, notes, and prompts in one fast, searchable workspace built for instant retrieval."
 };
 
 export default function LandingPage() {
